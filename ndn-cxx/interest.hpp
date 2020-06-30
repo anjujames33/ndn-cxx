@@ -275,6 +275,29 @@ public: // element access
   void
   refreshNonce();
 
+  Interest&
+  setSubscription(const uint32_t subsc);
+
+  /** @brief Get value of the subscription field
+  */
+  const uint32_t
+  getSubscription() const;
+
+  /** @brief Set value of the payload field
+  */
+  Interest&
+  setPayload(const uint8_t * payload, size_t length);
+
+  /** @brief Get value of the payload field
+  */
+  const uint8_t *
+  getPayload() const;
+
+  /** @brief Get the length of the payload field
+  */
+  size_t
+  getPayloadLength() const;
+
   time::milliseconds
   getInterestLifetime() const
   {
@@ -479,9 +502,11 @@ private:
   Selectors m_selectors; // NDN Packet Format v0.2 only
   mutable bool m_isCanBePrefixSet;
   mutable optional<uint32_t> m_nonce;
+  mutable Block m_payload;
   time::milliseconds m_interestLifetime;
   DelegationList m_forwardingHint;
   Block m_parameters; // NDN Packet Format v0.3 only
+  uint32_t m_subscribe;
 
   mutable Block m_wire;
 

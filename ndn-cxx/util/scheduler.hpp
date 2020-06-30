@@ -25,9 +25,9 @@
 #include "ndn-cxx/detail/asio-fwd.hpp"
 #include "ndn-cxx/detail/cancel-handle.hpp"
 #include "ndn-cxx/util/time.hpp"
-
+#include "ns3/nstime.h"
 #include "ns3/simulator.h"
-
+#include <unordered_set>
 #include <set>
 
 namespace ndn {
@@ -191,6 +191,8 @@ private:
   executeEvent();
 
 private:
+  std::unordered_set<int64_t> m_scheduled;
+  ns3::Time m_nextScheduled;
   EventQueue m_queue;
   bool m_isEventExecuting;
   ndn::optional<ns3::EventId> m_timerEvent;

@@ -107,6 +107,18 @@ Interest::encode02(EncodingImpl<TAG>& encoder) const
 
   // (reverse encoding)
 
+  // Payload
+  if(getPayloadLength() != 0) {
+        totalLength += encoder.prependBlock(m_payload);
+  }
+
+  // Subscription
+  if (getSubscription() >= 0) {
+      totalLength += prependNonNegativeIntegerBlock(encoder,
+                                                    tlv::Subscription,
+                                                    getSubscription());
+  }
+
   // ForwardingHint
   if (getForwardingHint().size() > 0) {
     totalLength += getForwardingHint().wireEncode(encoder);
@@ -154,6 +166,18 @@ Interest::encode03(EncodingImpl<TAG>& encoder) const
   //                Parameters?
 
   // (reverse encoding)
+
+  // Payload
+  if(getPayloadLength() != 0) {
+        totalLength += encoder.prependBlock(m_payload);
+  }
+
+  // Subscription
+  if (getSubscription() >= 0) {
+      totalLength += prependNonNegativeIntegerBlock(encoder,
+                                                    tlv::Subscription,
+                                                    getSubscription());
+  }
 
   // Parameters
   if (hasParameters()) {
@@ -289,6 +313,21 @@ Interest::decode02()
     m_forwardingHint = DelegationList();
   }
 
+  // Subscription
+  if (element != m_wire.elements_end() && element->type() == tlv::Subscription) {
+    m_subscribe = readNonNegativeInteger(*element);
+    ++element;
+  }
+  else {
+    m_subscribe = 0;
+  }
+
+  // Payload
+  if (element != m_wire.elements_end() && element->type() == tlv::Payload){
+    m_payload = *element;
+    ++element;
+  }
+
   return element == m_wire.elements_end();
 }
 
@@ -393,6 +432,26 @@ Interest::decode03()
         lastElement = 8;
         break;
       }
+      // Subscription
+      case tlv::Subscription: {
+        if (lastElement >= 9) {
+          BOOST_THROW_EXCEPTION(Error("Parameters element is out of order"));
+        }
+        m_subscribe = readNonNegativeInteger(*element);
+        lastElement = 9;
+        break;
+      }
+
+      // Payload
+      case tlv::Payload: {
+        if (lastElement >= 10) {
+          BOOST_THROW_EXCEPTION(Error("Parameters element is out of order"));
+        }
+        m_payload = *element;
+        lastElement = 10;
+        break;
+      }
+
       default: {
         if (tlv::isCriticalType(element->type())) {
           BOOST_THROW_EXCEPTION(Error("unrecognized element of critical type " +
@@ -551,6 +610,49 @@ Interest::setNonce(uint32_t nonce)
   m_wire.reset();
   return *this;
 }
+
+
+
+const uint32_t
+Interest::getSubscription() const
+{
+   return m_subscribe;
+
+}
+
+Interest&
+Interest::setSubscription(const uint32_t subsc)
+{
+
+   m_subscribe = subsc;
+
+   m_wire.reset();
+   return *this;
+
+}
+
+const uint8_t *
+Interest::getPayload() const
+{
+  return m_payload.value();
+}
+
+size_t
+Interest::getPayloadLength() const
+{
+  return m_payload.value_size();
+}
+
+Interest&
+Interest::setPayload(const uint8_t * payload, size_t length)
+{
+  m_payload = makeBinaryBlock(tlv::Payload,
+                              payload,
+                              length);
+  m_wire.reset();
+  return *this;
+}
+
 
 void
 Interest::refreshNonce()
